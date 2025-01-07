@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kicker Draft Order</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <h1>Kicker Draft Order Tracker</h1>
+
+    <!-- Input for Draft ID -->
+    <label for="draftId">Enter Sleeper Draft ID:</label>
+    <input type="text" id="draftId" placeholder="Enter Draft ID" />
+    <button onclick="fetchKickerOrder(true)">Get Kicker Draft Order</button>
+    <button onclick="downloadCSV()">Download CSV</button>
+
+    <!-- Loading Message -->
+    <p id="loadingMessage" style="display: none; font-weight: bold; color: blue;">Loading...</p>
+
+    <!-- Table to Display Draft Order -->
+    <table id="kickerTable">
+        <thead>
+            <tr>
+                <th>Rookie Pick</th>
+                <th>Pick Number</th>
+                <th>Round</th>
+                <th>Manager (Username)</th>
+                <th>User ID</th>
+                <th>Player Name</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        let lastKickerCount = 0; // Track kicker count to detect new picks
+
+        function fetchKickerOrder(manual = false) {
+            const draftIdInput = document.getElementById('draftId');
+            const draftId = draftIdInput.value.trim();
+
+            if (!draftId || isNaN(draftId)) {
+                alert("Please enter a valid numeric Draft ID.");
+                return;
+            }
+
+            // Store draft ID in local storage
+            localStorage.setItem("lastDraftId", draftId);
+
+            const requestUrl = `/kicker_order?draft_id=${draftId}`;
+            console.log("Fetching:", requestUrl);
+
+            if (manual) {
+                document.getElementById('loadingMessage').style.display = "block";
+            }
+
+            fetch(requestUrl)
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Response:", data);
+
+                    // Hide loading message after data loads
+                    document.getElementById('loadingMessage').style.display = "none";
+
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+
+                    // If the kicker count hasn't changed, do nothing (prevents unnecessary UI updates)
+                    if (!manual && data.length === lastKickerCount) {
+                        console.log("No new kickers picked, skipping update.");
+                        return;
+                    }
+
+                    lastKickerCount = data.length; // Update kicker count
+
+                    const tableBody = document.getElementById('kickerTable').querySelector("tbody");
+                    tableBody.innerHTML = "";  // Clear previous results
+
+                    if (data.length === 0) {
+                        tableBody.innerHTML = `<tr><td colspan="6">No kickers were drafted.</td></tr>`;
+                        return;
+                    }
+
+                    data.forEach(pick => {
+                        const row = `<tr>
+                            <td>${pick.rookie_pick}</td>
+                            <td>${pick.pick_number}</td>
+                            <td>${pick.round}</td>
+                            <td>${pick.username}</td>
+                            <td>${pick.user_id}</td>
+                            <td>${pick.player_name}</td>
+                        </tr>`;
+                        tableBody.innerHTML += row;
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    alert("An error occurred while fetching data.");
+                });
+        }
+
+        function downloadCSV() {
+            const table = document.getElementById('kickerTable');
+            let csvContent = "data:text/csv;charset=utf-8,";
+
+            // Get table headers
+            const headers = [];
+            table.querySelectorAll("thead th").forEach(th => {
+                headers.push(th.innerText);
+            });
+            csvContent += headers.join(",") + "\n";
+
+            // Get table rows
+            table.querySelectorAll("tbody tr").forEach(tr => {
+                const row = [];
+                tr.querySelectorAll("td").forEach(td => {
+                    row.push(td.innerText);
+                });
+                csvContent += row.join(",") + "\n";
+            });
+
+            // Create download link
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "kicker_draft_order.csv");
+            document.body.appendChild(link); // Required for Firefox
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Load stored draft ID when the page loads
+        window.onload = function () {
+            const storedDraftId = localStorage.getItem("lastDraftId");
+            if (storedDraftId) {
+                document.getElementById('draftId').value = storedDraftId;
+                fetchKickerOrder(); // Auto-fetch data on page load
+            }
+        };
+
+        // Auto-refresh every 2 minutes (120,000 milliseconds), but only update if a new kicker is picked
+        setInterval(() => fetchKickerOrder(), 120000);
+    </script>
+
+</body>
+
+</html>

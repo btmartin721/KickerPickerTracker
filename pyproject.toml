@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "KickerPickerTracker"
+version = "0.1.0"
+description = "A tool to track the order of Kicker picks for fantasy football startup dynasty drafts."
+authors = ["Bradley T. Martin <evobio721@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+flask = "^2.0"
+requests = "^2.26"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
