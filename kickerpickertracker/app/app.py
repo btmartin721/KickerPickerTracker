@@ -110,4 +110,6 @@ def kicker_order():
 
 
 if __name__ == "__main__":
-    app.run(debug=False)
+    app.jinja_env.auto_reload = True
+    app.config["TEMPLATES_AUTO_RELOAD"] = True
+    app.run(host="0.0.0.0", port=10000, debug=False)
