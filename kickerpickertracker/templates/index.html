@@ -50,7 +50,8 @@
             // Store draft ID in local storage
             localStorage.setItem("lastDraftId", draftId);
 
-            const requestUrl = `/kicker_order?draft_id=${draftId}`;
+            const requestUrl = `https://https://kickerpickertracker.onrender.com/kicker_order?draft_id=${draftId}`;
+
             console.log("Fetching:", requestUrl);
 
             if (manual) {
